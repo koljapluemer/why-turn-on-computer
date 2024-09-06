@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Grid</title>
+</head>
+<body>
+
+    <div id="goal-grid">
+
+
+        <div id="goal-1">build the best learning tool possible</div>
+
+        <div id="goal-1a">get better @</div>
+        <div id="goal-1b">be healthy</div>
+        <div id="goal-1c">be sane</div>
+
+        <div id="goal-1b1">have great cardio</div>
+        <div id="goal-1b2">be shredded</div>
+        <div id="goal-1b3">eat healthy</div>
+
+        <div id="goal-1b_1">learn 1 new motion</div>
+
+        <div id="goal-1b1a">hike 50k</div>
+        <div id="goal-1b__1">get heart rate up</div>
+
+
+        <div id="header-life" class="header">Life</div>
+        <div id="header-infinite" class="header">Infinite</div>
+        <div id="header-year" class="header">Year</div>
+        <div id="header-month" class="header">Month</div>
+        <div id="header-week" class="header">Week</div>
+        <div id="header-day" class="header">Day</div>
+        <div id="header-small" class="header">Small</div>
+    </div>
+    
+</body>
+
+<style>
+
+    .header {
+        font-weight: bold;
+    }
+
+    #goal-grid {
+        display: grid;
+        grid-template-columns: repeat(8, auto);
+        grid-template-rows: repeat(8, auto);
+    }
+
+    #goal-grid > div {
+        border: 1px solid black;
+        padding: 8px;
+    }
+
+    #header-life {
+        grid-column: 1 / 2;
+        grid-row: 1 / 2;
+    }
+
+    #header-infinite {
+        grid-column: 1 / 2;
+        grid-row: 2 / 4;
+    }
+
+    #header-year {
+        grid-column: 1 / 2;
+        grid-row: 4 / 5;
+    }
+
+    #header-month {
+        grid-column: 1 / 2;
+        grid-row: 5 / 6;
+    }
+
+    #header-week {
+        grid-column: 1 / 2;
+        grid-row: 6 / 7;
+    }
+
+    #header-day {
+        grid-column: 1 / 2;
+        grid-row: 7 / 8;
+    }
+
+    #header-small {
+        grid-column: 1 / 2;
+        grid-row: 8 / 9;
+    }
+
+    #goal-1 {
+        grid-column: 2 / 9;
+        /* fill whole row */
+        grid-row: 1 / 2;
+    }
+
+    #goal-1a {
+        grid-column: 2 / 3;
+        grid-row: 2 / 9;
+    }
+
+    #goal-1c {
+        grid-column: 3 / 4;
+        grid-row: 2 / 9;
+    }
+
+    #goal-1b {
+        grid-column: 4 / 9;
+        grid-row: 2 / 3;
+    }
+
+    #goal-1b__1 {
+        grid-column: 5 / 6;
+        grid-row: 7 / 9;
+    }
+
+    #goal-1b1 {
+        grid-column: 4 / 6;
+        grid-row: 3 / 4;
+    }
+
+    #goal-1b1a {
+        grid-column: 4 / 5;
+        grid-row: 4 / 9;
+    }
+
+    #goal-1b_1 {
+        grid-column: 8 / 9;
+        grid-row: 5 / 9;
+    }
+
+    #goal-1b2 {
+        grid-column: 6 / 7;
+        grid-row: 3 / 9;
+    }
+
+    #goal-1b3 {
+        grid-column: 7 / 8;
+        grid-row: 3 / 9;
+    }
+
+
+
+</style>
+</html>

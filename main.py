@@ -1,14 +1,67 @@
 import webview
 import os
-
+import re
 from time import sleep
 
+from appdirs import user_config_dir, user_data_dir
 
 dir = os.path.dirname(__file__)
 
+GOAL_NOTE = "🐑 I build the best learning tool possible"
+OBS_DIR = "/home/b/MEGA/Obsidian/Zettelkasten/Thoughts"
 
-import json
-from appdirs import user_config_dir, user_data_dir
+
+# Arrays to store goals
+goals = []
+actionable_goals = []
+
+
+def find_goals():
+    # Start processing from the main file
+    main_file_path = find_file_in_directory(GOAL_NOTE)
+    print("main file path", main_file_path)
+    if main_file_path:
+        extract_goals(main_file_path)
+
+    # Output the results
+    print("Goals:", goals)
+    print("Actionable Goals:", actionable_goals)
+
+
+# Function to extract goals from a file
+def extract_goals(file_path):
+    with open(file_path, 'r', encoding='utf-8') as file:
+        content = file.read()
+
+    # Regex pattern to find [[filename]] syntax
+    matches = re.findall(r'\[\[([^\[\]]+)\]\]', content)
+
+    # Track if the file has more goals to find
+    found_goals = False
+
+    for match in matches:
+        if '🐑' in match:
+            goal_path = find_file_in_directory(match)
+            if goal_path and goal_path not in goals:
+                goals.append(goal_path)
+                found_goals = True
+                # Recursively process the goal
+                extract_goals(goal_path)
+
+    # If no goals were found, mark as actionable
+    if not found_goals and file_path not in actionable_goals:
+        # save only the filename, not path
+        actionable_goals.append(os.path.basename(file_path))
+
+# Function to search for a file in the working directory
+def find_file_in_directory(filename):
+    for root, dirs, files in os.walk(OBS_DIR):
+        for file in files:
+            if file == f"{filename}.md":
+                return os.path.join(root, file)
+    return None
+
+
 
 
 
@@ -23,32 +76,6 @@ def getNextStep():
             return line.strip().split('=')[1]  # Get value after '='
     else:
         return None  # Return None if the config file doesn't exist
-
-# Function to save goals_dict (the nested dictionary)
-def save_goals_dict(goals_dict):
-    # Get platform-specific data directory
-    data_dir = user_data_dir("goals")
-    
-    # Ensure the directory exists
-    os.makedirs(data_dir, exist_ok=True)
-    
-    # File path for goals_dict
-    goals_file = os.path.join(data_dir, "goals.json")
-    
-    # Save the nested dictionary to goals.json
-    with open(goals_file, 'w') as goals:
-        json.dump(goals_dict, goals, indent=4)
-
-# Function to load goals_dict
-def load_goals_dict():
-    data_dir = user_data_dir("goals")
-    goals_file = os.path.join(data_dir, "goals.json")
-    
-    if os.path.exists(goals_file):
-        with open(goals_file, 'r') as goals:
-            return json.load(goals)
-    else:
-        return None  # Return None if the goals file doesn't exist
 
 
 
@@ -82,6 +109,8 @@ class Api():
 
 
 def main():
+    find_goals()
+    return
     path = os.path.join(dir, 'main.html')
     with open (path, 'r') as file:
         html = file.read()
