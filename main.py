@@ -1,6 +1,7 @@
 import webview
 import os
 
+from time import sleep
 
 # Create a class to expose to JavaScript
 class Api():
@@ -18,7 +19,7 @@ def main():
     with open ('assets/main.html', 'r') as file:
         html = file.read()
         # window = webview.create_window('Woah dude!', html=html)
-        window = webview.create_window("Test", html=html, js_api=Api(), on_top=True, frameless=False, width=300, height=20, transparent=True)
+        window = webview.create_window("on program", html=html, js_api=Api(), on_top=True, frameless=False, width=1000, height=1, transparent=False, x = 150, y= 1300)
         webview.start(window)
 
 
