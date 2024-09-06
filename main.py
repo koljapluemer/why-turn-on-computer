@@ -3,6 +3,7 @@ import os
 import re
 import json
 from time import sleep
+import random
 
 from appdirs import user_config_dir, user_data_dir
 
@@ -65,6 +66,17 @@ def find_file_in_directory(filename):
     return None
 
 
+def make_goal_select(goals):
+    # select a random one by setting the selected attribute randomly to one
+    index_to_select = random.randint(0, len(goals) - 1)
+    html = f'<select name="goals" id="goals">'
+    for i, goal in enumerate(goals):
+        selected = 'selected' if i == index_to_select else ''
+        html += f'<option value="{goal}" {selected}>{goal}</option>'
+    html += '</select>'
+    return html
+
+
 
 # Function to load current_goal
 def getNextStep():
@@ -116,8 +128,8 @@ def main():
     with open (path, 'r') as file:
         html = file.read()
         html = html.replace("$NEXTSTEP", getNextStep())
-        html = html.replace("$GOALS_AS_STRING", goals_as_json_string)
-        window = webview.create_window("on program", html=html, js_api=Api(), on_top=True, frameless=False, width=1000, height=1, transparent=False, x = 150, y= 1300)
+        html = html.replace("$GOALS", make_goal_select(goals))
+        window = webview.create_window("on program", html=html, js_api=Api(), on_top=True, frameless=True, width=1200, height=10, transparent=False, x = 150, y= 1300, resizable=False, easy_drag=False, min_size=(1200, 20))
         webview.start(window)
 
 
