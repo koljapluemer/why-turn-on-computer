@@ -1,6 +1,7 @@
 import webview
 import os
 import re
+import json
 from time import sleep
 
 from appdirs import user_config_dir, user_data_dir
@@ -26,6 +27,8 @@ def find_goals():
     # Output the results
     print("Goals:", goals)
     print("Actionable Goals:", actionable_goals)
+
+    return actionable_goals
 
 
 # Function to extract goals from a file
@@ -60,8 +63,6 @@ def find_file_in_directory(filename):
             if file == f"{filename}.md":
                 return os.path.join(root, file)
     return None
-
-
 
 
 
@@ -109,12 +110,13 @@ class Api():
 
 
 def main():
-    find_goals()
-    return
+    goals = find_goals()
+    goals_as_json_string = json.dumps(goals)
     path = os.path.join(dir, 'main.html')
     with open (path, 'r') as file:
         html = file.read()
         html = html.replace("$NEXTSTEP", getNextStep())
+        html = html.replace("$GOALS_AS_STRING", goals_as_json_string)
         window = webview.create_window("on program", html=html, js_api=Api(), on_top=True, frameless=False, width=1000, height=1, transparent=False, x = 150, y= 1300)
         webview.start(window)
 
