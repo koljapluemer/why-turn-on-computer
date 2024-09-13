@@ -1,0 +1,40 @@
+<body>
+    <div class="row">
+        <div class="">current goal: $GOALS</div>
+        <button onclick="document.getElementById('goals').selectedIndex = Math.floor(Math.random() * document.getElementById('goals').options.length);
+">
+            Shuffle
+        </button>
+
+        <div class="">next step: <input type="text" id="next-step" value="$NEXTSTEP"
+                oninput="pywebview.api.setNextStep(event.target.value)"></div>
+
+
+    </div>
+
+
+</body>
+
+
+<style>
+    html,
+    body,
+    div,
+    main input,
+    button {
+        font-size: 8pt;
+        margin: 0;
+        padding: 0;
+    }
+
+    .row {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 4px;
+    }
+
+    #next-step {
+        min-width: 500px;
+    }
+</style>

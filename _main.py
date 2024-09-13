@@ -129,7 +129,7 @@ def main():
         html = file.read()
         html = html.replace("$NEXTSTEP", getNextStep())
         html = html.replace("$GOALS", make_goal_select(goals))
-        window = webview.create_window("on program", html=html, js_api=Api(), on_top=True, frameless=True, width=1200, height=10, transparent=False, x = 150, y= -10, resizable=False, easy_drag=False, min_size=(1200, 20)) #1300
+        window = webview.create_window("on program", html=html, js_api=Api(), on_top=True, frameless=True, width=1200, height=10, transparent=False, x = 150, y= 1300, resizable=False, easy_drag=False, min_size=(1200, 20))
         webview.start(window)
 
 
