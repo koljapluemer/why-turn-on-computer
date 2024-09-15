@@ -8,11 +8,15 @@ from appdirs import user_config_dir, user_data_dir
 import os
 import json
 
+import re
+
+LARGER_GOALS_NOTE = "/home/b/MEGA/Obsidian/Zettelkasten/Thoughts/valid reasons to turn on computer.md"
 
 # Data Model for storing task information
 class Task:
-    def __init__(self, goal="", estimated_time=0):
+    def __init__(self, goal="", estimated_time=0, larger_goal=""):
         self.goal = goal
+        self.larger_goal = larger_goal
         self.estimated_time = estimated_time
         self.start_time = None
         self.end_time = None
@@ -35,6 +39,7 @@ class Task:
         duration = self.get_duration()
         task_data = [
             f"goal={self.goal}",
+            f"larger_goal={self.larger_goal}",
             f"estimated_time={self.estimated_time}",
             f"result={self.result}",
             f"comment={self.comment}",
@@ -78,6 +83,20 @@ class TaskManager:
         
         self.goal_input = ttk.Entry(fullscreen_window, font=("Arial", 20), width=50)
         self.goal_input.pack(pady=10)
+
+        # larger goal
+        # make a dropdown based on all [[🐑 foo]] found in the LARGER_GOALS_NOTE
+
+        with open(LARGER_GOALS_NOTE, "r") as f:
+            content = f.read()
+            larger_goals = re.findall(r"\[\[🐑 (.+?)\]\]", content)
+            larger_goals = sorted(list(set(larger_goals)))
+            self.larger_goal = tk.StringVar()
+            self.larger_goal.set(larger_goals[0])
+            larger_goal_menu = ttk.OptionMenu(fullscreen_window, self.larger_goal, larger_goals[0], *larger_goals)
+            larger_goal_menu.pack(pady=10)
+
+        # time needed
         
         ttk.Label(fullscreen_window, text="Estimated time needed (minutes)", font=("Arial", 18)).pack(pady=20)
         
@@ -96,6 +115,7 @@ class TaskManager:
             self.task.goal = goal
             self.task.estimated_time = int(estimated_time)
             self.task.set_start_time()
+            self.task.larger_goal = self.larger_goal.get()
             self.fullscreen_window.destroy()
             self.show_task_window()
 
