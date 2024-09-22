@@ -14,7 +14,7 @@ LARGER_GOALS_NOTE = "/home/b/MEGA/Obsidian/Zettelkasten/Thoughts/valid reasons t
 
 # Data Model for storing task information
 class Task:
-    def __init__(self, goal="", estimated_time=0, larger_goal=""):
+    def __init__(self, goal="", estimated_time=0, larger_goal="", hypothesis=""):
         self.goal = goal
         self.larger_goal = larger_goal
         self.estimated_time = estimated_time
@@ -22,6 +22,7 @@ class Task:
         self.end_time = None
         self.result = None
         self.comment = ""
+        self.hypothesis = hypothesis
 
     def set_start_time(self):
         self.start_time = time.time()
@@ -34,34 +35,60 @@ class Task:
             return self.end_time - self.start_time
         return None
 
-    def save(self):
+    def save_at_beginning(self):
         # Prepare the data to be saved in NAME=VALUE format
         duration = self.get_duration()
+        start_time = datetime.fromtimestamp(self.start_time).isoformat()
         task_data = [
             f"goal={self.goal}",
             f"larger_goal={self.larger_goal}",
+            f"hypothesis={self.hypothesis}",
             f"estimated_time={self.estimated_time}",
-            f"result={self.result}",
-            f"comment={self.comment}",
-            f"duration={duration}",
-            f"start_time={datetime.fromtimestamp(self.start_time).isoformat()}",
-            f"end_time={datetime.fromtimestamp(self.end_time).isoformat()}"
+            f"start_time={start_time}",
         ]
 
         # Get the user data directory using appdirs
         app_name = "GoalTracker"
-        app_author = "YourName"  # Adjust this if needed
+        app_author = "Kolja Sam"  # Adjust this if needed
         data_dir = user_data_dir(app_name, app_author)
 
         # Ensure the directory exists
         os.makedirs(data_dir, exist_ok=True)
 
         # Create a new text file with a timestamp in the filename
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        log_file_path = os.path.join(data_dir, f'task_{timestamp}.txt')
+        log_file_path = os.path.join(data_dir, f'goal_{start_time}.txt')
 
         # Write each task data field as NAME=VALUE on a new line
         with open(log_file_path, 'w') as log_file:
+            for line in task_data:
+                log_file.write(f"{line}\n")
+
+        print(f"Task data saved to {log_file_path}")
+
+    def save_at_end(self):
+        # Prepare the data to be saved in NAME=VALUE format
+        duration = self.get_duration()
+        start_time = datetime.fromtimestamp(self.start_time).isoformat()
+
+        task_data = [
+            f"result={self.result}",
+            f"comment={self.comment}",
+            f"duration={duration}",
+            f"end_time={datetime.fromtimestamp(self.end_time).isoformat()}"
+        ]
+
+        # Get the user data directory using appdirs
+        app_name = "GoalTracker"
+        app_author = "Kolja Sam"  # Adjust this if needed
+        data_dir = user_data_dir(app_name, app_author)
+
+        # Ensure the directory exists
+        os.makedirs(data_dir, exist_ok=True)
+
+        log_file_path = os.path.join(data_dir, f'goal_{start_time}.txt')
+
+        # Write each task data field as NAME=VALUE on a new line
+        with open(log_file_path, 'a') as log_file:
             for line in task_data:
                 log_file.write(f"{line}\n")
 
@@ -96,6 +123,12 @@ class TaskManager:
             larger_goal_menu = ttk.OptionMenu(fullscreen_window, self.larger_goal, larger_goals[0], *larger_goals)
             larger_goal_menu.pack(pady=10)
 
+        # hypothesis (another simple text input)
+        ttk.Label(fullscreen_window, text="Hypothesis", font=("Arial", 18)).pack(pady=20)
+        self.hypothesis_input = ttk.Entry(fullscreen_window, font=("Arial", 16), width=50)
+        self.hypothesis_input.pack(pady=10)
+
+
         # time needed
         
         ttk.Label(fullscreen_window, text="Estimated time needed (minutes)", font=("Arial", 18)).pack(pady=20)
@@ -116,6 +149,9 @@ class TaskManager:
             self.task.estimated_time = int(estimated_time)
             self.task.set_start_time()
             self.task.larger_goal = self.larger_goal.get()
+            self.task.hypothesis = self.hypothesis_input.get()
+            self.task.save_at_beginning()
+
             self.fullscreen_window.destroy()
             self.show_task_window()
 
@@ -167,7 +203,7 @@ class TaskManager:
         if result.isdigit() and 0 <= int(result) <= 10:
             self.task.result = int(result)
             self.task.comment = comment
-            self.task.save()
+            self.task.save_at_end()
             self.feedback_window.destroy()
             self.root.quit()
 
