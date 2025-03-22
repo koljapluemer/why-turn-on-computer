@@ -10,8 +10,6 @@ import json
 
 import re
 
-LARGER_GOALS_NOTE = "/home/b/MEGA/Obsidian/Zettelkasten/Thoughts/valid reasons to turn on computer.md"
-
 # Data Model for storing task information
 class Task:
     def __init__(self, goal="", estimated_time=0, larger_goal="", hypothesis=""):
@@ -112,16 +110,17 @@ class TaskManager:
         self.goal_input.pack(pady=10)
 
         # larger goal
-        # make a dropdown based on all [[🐑 foo]] found in the LARGER_GOALS_NOTE
-
-        with open(LARGER_GOALS_NOTE, "r") as f:
-            content = f.read()
-            larger_goals = re.findall(r"\[\[🐑 (.+?)\]\]", content)
-            larger_goals = sorted(list(set(larger_goals)))
-            self.larger_goal = tk.StringVar()
-            self.larger_goal.set(larger_goals[0])
-            larger_goal_menu = ttk.OptionMenu(fullscreen_window, self.larger_goal, larger_goals[0], *larger_goals)
-            larger_goal_menu.pack(pady=10)
+        # read goals directly from goals.txt
+        try:
+            with open("goals.txt", "r") as f:
+                larger_goals = [line.strip() for line in f if line.strip()]
+        except FileNotFoundError:
+            larger_goals = ["No goals defined"]
+        
+        self.larger_goal = tk.StringVar()
+        self.larger_goal.set(larger_goals[0] if larger_goals else "No goals defined")
+        larger_goal_menu = ttk.OptionMenu(fullscreen_window, self.larger_goal, larger_goals[0] if larger_goals else "No goals defined", *larger_goals)
+        larger_goal_menu.pack(pady=10)
 
         # hypothesis (another simple text input)
         ttk.Label(fullscreen_window, text="Hypothesis", font=("Arial", 18)).pack(pady=20)

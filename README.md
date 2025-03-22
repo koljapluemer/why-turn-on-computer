@@ -1,10 +1,10 @@
-# Goal
+# Why Turn On Computer?
 
-- build with `pyinstaller main.py --add-data *html:. --noconfirm` (assumes all relevant assets are html)
-- built executable is avaialable at `./GITHUB/goal/dist/main/main`
-    - is in the autostart of `Startup Applications`
-    - also in the start menu with an Atom copy-pasted desktop shortcut :)
-        - this is useful when editing goals in obs, because you have to restart
+## Running it
+
+- default python app. make a `venv`, install reqs, run `main.py`.
+- to be really effective, put the script (e.g. `python3 ~/GITHUB/why-turn-on-computer/main.py`) in OS's autostart
+- expects a `goals.txt` file to be present in the folder, where each line represents one high-level goal
 
 
 ## Documentation
@@ -23,3 +23,15 @@
             - they are recursively parsed out of the Obs dict, half-hard coded, with `find_goals()` and `extract_goals()` and `find_file_in_directory()`, chatGPT functions to start from a goal `.md` file and look for goals in this file recursively, building an array of "leaf" goals with no children
             - `make_goal_select()` takes this array and dynamically builds a `<select>` to be slapped into the HTML string
                 - this has surpringly nice affordances, like ability to be shuffled in a line of js in `main.html` w/o callback to python and ofc manual goal selection if one wishes to do so.
+
+
+### Building
+
+- can be built into an executable, but it's actually more pragmatic to simply run the python script 
+
+
+- build with `pyinstaller main.py --add-data *html:. --noconfirm` (assumes all relevant assets are html)
+- built executable is avaialable at `./GITHUB/goal/dist/main/main`
+    - is in the autostart of `Startup Applications`
+    - also in the start menu with an Atom copy-pasted desktop shortcut :)
+        - this is useful when editing goals in obs, because you have to restart
