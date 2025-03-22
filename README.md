@@ -1,5 +1,9 @@
 # Why Turn On Computer?
 
+![screenshot](screenshot.png)
+
+A little tkinter app running on autostart asking me why I turned on my computer, and in the end checks whether I did what I set out to do. In between, lives as a little mini-window on the bottom edge of my screen.
+
 ## Running it
 
 - default python app. make a `venv`, install reqs, run `main.py`.
