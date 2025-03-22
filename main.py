@@ -132,10 +132,72 @@ class TaskManager:
         self.root = root
         self.task = Task()
         
-        # Create styles for larger widgets
+        # Configure dark theme
         style = ttk.Style()
-        style.configure("Large.TCheckbutton", font=("Arial", 14))
-        style.configure("Large.TButton", font=("Arial", 14))
+        style.theme_use('clam')  # Use clam as base theme
+        
+        # Configure colors
+        style.configure(".", 
+            background="#2b2b2b",
+            foreground="#ffffff",
+            fieldbackground="#3c3f41",
+            troughcolor="#3c3f41",
+            selectbackground="#4b6eaf",
+            selectforeground="#ffffff"
+        )
+        
+        # Configure specific widgets
+        style.configure("TLabel", 
+            background="#2b2b2b",
+            foreground="#ffffff"
+        )
+        
+        style.configure("TEntry",
+            fieldbackground="#3c3f41",
+            foreground="#ffffff"
+        )
+        
+        style.configure("TButton",
+            background="#3c3f41",
+            foreground="#ffffff",
+            padding=5
+        )
+        
+        style.configure("TCheckbutton",
+            background="#2b2b2b",
+            foreground="#ffffff"
+        )
+        
+        style.configure("TFrame",
+            background="#2b2b2b"
+        )
+        
+        style.configure("TText",
+            fieldbackground="#3c3f41",
+            foreground="#ffffff"
+        )
+        
+        style.configure("Large.TCheckbutton", 
+            font=("Arial", 14),
+            background="#2b2b2b",
+            foreground="#ffffff"
+        )
+        
+        style.configure("Large.TButton", 
+            font=("Arial", 14),
+            background="#3c3f41",
+            foreground="#ffffff",
+            padding=5
+        )
+        
+        # Configure OptionMenu
+        style.configure("TMenubutton",
+            background="#3c3f41",
+            foreground="#ffffff"
+        )
+
+        # Set root window background
+        self.root.configure(bg="#2b2b2b")
         
         self.show_fullscreen_input_window()
 
@@ -143,6 +205,7 @@ class TaskManager:
         fullscreen_window = tk.Toplevel(self.root)
         fullscreen_window.attributes("-fullscreen", True)
         fullscreen_window.attributes("-topmost", True)
+        fullscreen_window.configure(bg="#2b2b2b")  # Set window background
 
         ttk.Label(fullscreen_window, text="Why did you turn on your computer?", font=("Arial", 24)).pack(pady=50)
         
@@ -177,9 +240,7 @@ class TaskManager:
         self.hypothesis_input = ttk.Entry(fullscreen_window, font=("Arial", 16), width=50)
         self.hypothesis_input.pack(pady=10)
 
-
         # time needed
-        
         ttk.Label(fullscreen_window, text="Estimated time needed (minutes)", font=("Arial", 18)).pack(pady=20)
         
         self.time_input = ttk.Entry(fullscreen_window, font=("Arial", 16), width=10)
@@ -211,6 +272,7 @@ class TaskManager:
         task_window.overrideredirect(True)  # Frameless
         task_window.geometry(f"500x20+100+{self.root.winfo_screenheight()-20}")  # Small height of 15px
         task_window.attributes("-topmost", True)
+        task_window.configure(bg="#2b2b2b")  # Set window background
 
         # Frame to hold the content with no margins
         content_frame = ttk.Frame(task_window, padding=(0, 0, 0, 0))
@@ -234,6 +296,7 @@ class TaskManager:
         feedback_window.title("Task Feedback")
         feedback_window.attributes("-fullscreen", True)
         feedback_window.attributes("-topmost", True)
+        feedback_window.configure(bg="#2b2b2b")  # Set window background
 
         # Main container frame
         main_frame = ttk.Frame(feedback_window, padding="20")
