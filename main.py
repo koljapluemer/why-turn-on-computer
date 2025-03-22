@@ -12,7 +12,7 @@ import re
 
 # Data Model for storing task information
 class Task:
-    def __init__(self, goal="", estimated_time=0, larger_goal="", hypothesis="", will_program=False):
+    def __init__(self, goal="", estimated_time=0, larger_goal="", hypothesis="", will_program=False, public_facing=False):
         self.goal = goal
         self.larger_goal = larger_goal
         self.estimated_time = estimated_time
@@ -22,6 +22,7 @@ class Task:
         self.comment = ""
         self.hypothesis = hypothesis
         self.will_program = will_program
+        self.public_facing = public_facing
         # Programming-specific fields
         self.logged_in_obs = False
         self.drafted_outline = False
@@ -29,6 +30,10 @@ class Task:
         self.changes_documented = False
         self.test_covered = False
         self.refactored = False
+        self.screenshots_updated = False
+        self.wrapped_in_story = False
+        # Public-facing specific fields
+        self.communication_done = False
 
     def set_start_time(self):
         self.start_time = time.time()
@@ -52,6 +57,7 @@ class Task:
             f"estimated_time={self.estimated_time}",
             f"start_time={start_time}",
             f"will_program={self.will_program}",
+            f"public_facing={self.public_facing}",
         ]
 
         # Get the user data directory using appdirs
@@ -92,7 +98,15 @@ class Task:
                 f"tracked_issues={self.tracked_issues}",
                 f"changes_documented={self.changes_documented}",
                 f"test_covered={self.test_covered}",
-                f"refactored={self.refactored}"
+                f"refactored={self.refactored}",
+                f"screenshots_updated={self.screenshots_updated}",
+                f"wrapped_in_story={self.wrapped_in_story}"
+            ])
+
+        # Add public-facing specific data if applicable
+        if self.public_facing:
+            task_data.extend([
+                f"communication_done={self.communication_done}"
             ])
 
         # Get the user data directory using appdirs
@@ -117,6 +131,12 @@ class TaskManager:
     def __init__(self, root):
         self.root = root
         self.task = Task()
+        
+        # Create styles for larger widgets
+        style = ttk.Style()
+        style.configure("Large.TCheckbutton", font=("Arial", 14))
+        style.configure("Large.TButton", font=("Arial", 14))
+        
         self.show_fullscreen_input_window()
 
     def show_fullscreen_input_window(self):
@@ -147,6 +167,11 @@ class TaskManager:
         will_program_checkbox = ttk.Checkbutton(fullscreen_window, text="Will program?", variable=self.will_program_var)
         will_program_checkbox.pack(pady=10)
 
+        # public facing checkbox
+        self.public_facing_var = tk.BooleanVar(value=False)
+        public_facing_checkbox = ttk.Checkbutton(fullscreen_window, text="Public-facing?", variable=self.public_facing_var)
+        public_facing_checkbox.pack(pady=10)
+
         # hypothesis (another simple text input)
         ttk.Label(fullscreen_window, text="Hypothesis", font=("Arial", 18)).pack(pady=20)
         self.hypothesis_input = ttk.Entry(fullscreen_window, font=("Arial", 16), width=50)
@@ -175,6 +200,7 @@ class TaskManager:
             self.task.larger_goal = self.larger_goal.get()
             self.task.hypothesis = self.hypothesis_input.get()
             self.task.will_program = self.will_program_var.get()
+            self.task.public_facing = self.public_facing_var.get()
             self.task.save_at_beginning()
 
             self.fullscreen_window.destroy()
@@ -206,28 +232,32 @@ class TaskManager:
     def show_feedback_window(self):
         feedback_window = tk.Toplevel(self.root)
         feedback_window.title("Task Feedback")
-        feedback_window.geometry("400x700")
+        feedback_window.attributes("-fullscreen", True)
         feedback_window.attributes("-topmost", True)
 
-        # Create a frame for better organization
-        main_frame = ttk.Frame(feedback_window, padding="10")
-        main_frame.pack(fill="both", expand=True)
+        # Main container frame
+        main_frame = ttk.Frame(feedback_window, padding="20")
+        main_frame.pack(expand=True, fill="both")
 
-        ttk.Label(main_frame, text="Goal Reached (0-10)", font=("Arial", 16)).pack(pady=20)
-        self.result_input = ttk.Entry(main_frame, font=("Arial", 14))
-        self.result_input.pack(pady=10)
+        # Content frame with max width
+        content_frame = ttk.Frame(main_frame)
+        content_frame.pack(expand=True)
 
-        ttk.Label(main_frame, text="Comments", font=("Arial", 16)).pack(pady=20)
-        self.comment_input = tk.Text(main_frame, font=("Arial", 14), height=5)
-        self.comment_input.pack(pady=10)
+        ttk.Label(content_frame, text="Goal Reached (0-10)", font=("Arial", 18)).pack(pady=15)
+        self.result_input = ttk.Entry(content_frame, font=("Arial", 16), width=10)
+        self.result_input.pack(pady=5)
+
+        ttk.Label(content_frame, text="Comments", font=("Arial", 18)).pack(pady=15)
+        self.comment_input = tk.Text(content_frame, font=("Arial", 16), height=4, width=50)
+        self.comment_input.pack(pady=5)
 
         # Add time information
-        time_frame = ttk.Frame(main_frame)
+        time_frame = ttk.Frame(content_frame)
         time_frame.pack(pady=10)
         
         # Estimated time
         ttk.Label(time_frame, text=f"Estimated: {self.task.estimated_time}m", 
-                 font=("Arial", 14)).pack(side="left", padx=10)
+                 font=("Arial", 16)).pack(side="left", padx=10)
         
         # Actual time taken
         duration = self.task.get_duration()
@@ -236,49 +266,69 @@ class TaskManager:
             seconds = int(duration % 60)
             time_taken = f"{minutes}m {seconds}s"
             ttk.Label(time_frame, text=f"Actual: {time_taken}", 
-                     font=("Arial", 14)).pack(side="left", padx=10)
+                     font=("Arial", 16)).pack(side="left", padx=10)
 
         # Add programming-specific checkboxes if applicable
         if self.task.will_program:
-            ttk.Label(main_frame, text="Programming Tasks", font=("Arial", 16)).pack(pady=20)
+            ttk.Label(content_frame, text="Programming Tasks", font=("Arial", 18)).pack(pady=15)
             
             # Create a frame for checkboxes with left alignment
-            checkbox_frame = ttk.Frame(main_frame)
+            checkbox_frame = ttk.Frame(content_frame)
             checkbox_frame.pack(fill="x", padx=20)
             
             self.logged_in_obs_var = tk.BooleanVar(value=False)
             ttk.Checkbutton(checkbox_frame, text="Relevant learnings, snippets and log in Obs", 
-                          variable=self.logged_in_obs_var).pack(anchor="w", pady=5)
+                          variable=self.logged_in_obs_var, style="Large.TCheckbutton").pack(anchor="w", pady=5)
             
             self.drafted_outline_var = tk.BooleanVar(value=False)
             ttk.Checkbutton(checkbox_frame, text="Drafted speculative outline", 
-                          variable=self.drafted_outline_var).pack(anchor="w", pady=5)
+                          variable=self.drafted_outline_var, style="Large.TCheckbutton").pack(anchor="w", pady=5)
             
             self.tracked_issues_var = tk.BooleanVar(value=False)
             ttk.Checkbutton(checkbox_frame, text="Emerging issues tracked in gh", 
-                          variable=self.tracked_issues_var).pack(anchor="w", pady=5)
+                          variable=self.tracked_issues_var, style="Large.TCheckbutton").pack(anchor="w", pady=5)
             
             self.changes_documented_var = tk.BooleanVar(value=False)
             ttk.Checkbutton(checkbox_frame, text="Changes indicated in .md in project", 
-                          variable=self.changes_documented_var).pack(anchor="w", pady=5)
+                          variable=self.changes_documented_var, style="Large.TCheckbutton").pack(anchor="w", pady=5)
             
             self.test_covered_var = tk.BooleanVar(value=False)
             ttk.Checkbutton(checkbox_frame, text="Test-covered", 
-                          variable=self.test_covered_var).pack(anchor="w", pady=5)
+                          variable=self.test_covered_var, style="Large.TCheckbutton").pack(anchor="w", pady=5)
 
             self.refactored_var = tk.BooleanVar(value=False)
             ttk.Checkbutton(checkbox_frame, text="Refactored", 
-                          variable=self.refactored_var).pack(anchor="w", pady=5)
+                          variable=self.refactored_var, style="Large.TCheckbutton").pack(anchor="w", pady=5)
+
+            self.screenshots_updated_var = tk.BooleanVar(value=False)
+            ttk.Checkbutton(checkbox_frame, text="New state reflected in screenshots", 
+                          variable=self.screenshots_updated_var, style="Large.TCheckbutton").pack(anchor="w", pady=5)
+
+            self.wrapped_in_story_var = tk.BooleanVar(value=False)
+            ttk.Checkbutton(checkbox_frame, text="Wrapped in user story", 
+                          variable=self.wrapped_in_story_var, style="Large.TCheckbutton").pack(anchor="w", pady=5)
+
+        # Add public-facing specific checkboxes if applicable
+        if self.task.public_facing:
+            ttk.Label(content_frame, text="Public-facing Tasks", font=("Arial", 18)).pack(pady=15)
+            
+            # Create a frame for checkboxes with left alignment
+            public_checkbox_frame = ttk.Frame(content_frame)
+            public_checkbox_frame.pack(fill="x", padx=20)
+            
+            self.communication_done_var = tk.BooleanVar(value=False)
+            ttk.Checkbutton(public_checkbox_frame, text="Communication done or scheduled", 
+                          variable=self.communication_done_var, style="Large.TCheckbutton").pack(anchor="w", pady=5)
 
         # Button frame for better organization
-        button_frame = ttk.Frame(main_frame)
+        button_frame = ttk.Frame(content_frame)
         button_frame.pack(pady=20)
 
-        submit_button = ttk.Button(button_frame, text="Submit", command=self.on_submit)
-        submit_button.pack(side="left", padx=5)
+        submit_button = ttk.Button(button_frame, text="Submit", command=self.on_submit, style="Large.TButton")
+        submit_button.pack(side="left", padx=10)
 
-        nevermind_button = ttk.Button(button_frame, text="Nevermind", command=self.on_nevermind)
-        nevermind_button.pack(side="left", padx=5)
+        nevermind_button = ttk.Button(button_frame, text="Nevermind", command=self.on_nevermind, style="Large.TButton")
+        nevermind_button.pack(side="left", padx=10)
 
         self.feedback_window = feedback_window
 
@@ -297,6 +347,12 @@ class TaskManager:
                 self.task.changes_documented = self.changes_documented_var.get()
                 self.task.test_covered = self.test_covered_var.get()
                 self.task.refactored = self.refactored_var.get()
+                self.task.screenshots_updated = self.screenshots_updated_var.get()
+                self.task.wrapped_in_story = self.wrapped_in_story_var.get()
+            
+            # Save public-facing specific data if applicable
+            if self.task.public_facing:
+                self.task.communication_done = self.communication_done_var.get()
             
             self.task.save_at_end()
             self.feedback_window.destroy()
