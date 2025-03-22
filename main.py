@@ -12,7 +12,7 @@ import re
 
 # Data Model for storing task information
 class Task:
-    def __init__(self, goal="", estimated_time=0, larger_goal="", hypothesis=""):
+    def __init__(self, goal="", estimated_time=0, larger_goal="", hypothesis="", will_program=False):
         self.goal = goal
         self.larger_goal = larger_goal
         self.estimated_time = estimated_time
@@ -21,6 +21,14 @@ class Task:
         self.result = None
         self.comment = ""
         self.hypothesis = hypothesis
+        self.will_program = will_program
+        # Programming-specific fields
+        self.logged_in_obs = False
+        self.drafted_outline = False
+        self.tracked_issues = False
+        self.changes_documented = False
+        self.test_covered = False
+        self.refactored = False
 
     def set_start_time(self):
         self.start_time = time.time()
@@ -43,6 +51,7 @@ class Task:
             f"hypothesis={self.hypothesis}",
             f"estimated_time={self.estimated_time}",
             f"start_time={start_time}",
+            f"will_program={self.will_program}",
         ]
 
         # Get the user data directory using appdirs
@@ -74,6 +83,17 @@ class Task:
             f"duration={duration}",
             f"end_time={datetime.fromtimestamp(self.end_time).isoformat()}"
         ]
+
+        # Add programming-specific data if applicable
+        if self.will_program:
+            task_data.extend([
+                f"logged_in_obs={self.logged_in_obs}",
+                f"drafted_outline={self.drafted_outline}",
+                f"tracked_issues={self.tracked_issues}",
+                f"changes_documented={self.changes_documented}",
+                f"test_covered={self.test_covered}",
+                f"refactored={self.refactored}"
+            ])
 
         # Get the user data directory using appdirs
         app_name = "GoalTracker"
@@ -122,6 +142,11 @@ class TaskManager:
         larger_goal_menu = ttk.OptionMenu(fullscreen_window, self.larger_goal, larger_goals[0] if larger_goals else "No goals defined", *larger_goals)
         larger_goal_menu.pack(pady=10)
 
+        # will program checkbox
+        self.will_program_var = tk.BooleanVar(value=False)
+        will_program_checkbox = ttk.Checkbutton(fullscreen_window, text="Will program?", variable=self.will_program_var)
+        will_program_checkbox.pack(pady=10)
+
         # hypothesis (another simple text input)
         ttk.Label(fullscreen_window, text="Hypothesis", font=("Arial", 18)).pack(pady=20)
         self.hypothesis_input = ttk.Entry(fullscreen_window, font=("Arial", 16), width=50)
@@ -149,6 +174,7 @@ class TaskManager:
             self.task.set_start_time()
             self.task.larger_goal = self.larger_goal.get()
             self.task.hypothesis = self.hypothesis_input.get()
+            self.task.will_program = self.will_program_var.get()
             self.task.save_at_beginning()
 
             self.fullscreen_window.destroy()
@@ -183,16 +209,76 @@ class TaskManager:
         feedback_window.geometry("400x700")
         feedback_window.attributes("-topmost", True)
 
-        ttk.Label(feedback_window, text="Goal Reached (0-10)", font=("Arial", 16)).pack(pady=20)
-        self.result_input = ttk.Entry(feedback_window, font=("Arial", 14))
+        # Create a frame for better organization
+        main_frame = ttk.Frame(feedback_window, padding="10")
+        main_frame.pack(fill="both", expand=True)
+
+        ttk.Label(main_frame, text="Goal Reached (0-10)", font=("Arial", 16)).pack(pady=20)
+        self.result_input = ttk.Entry(main_frame, font=("Arial", 14))
         self.result_input.pack(pady=10)
 
-        ttk.Label(feedback_window, text="Comments", font=("Arial", 16)).pack(pady=20)
-        self.comment_input = tk.Text(feedback_window, font=("Arial", 14), height=5)
+        ttk.Label(main_frame, text="Comments", font=("Arial", 16)).pack(pady=20)
+        self.comment_input = tk.Text(main_frame, font=("Arial", 14), height=5)
         self.comment_input.pack(pady=10)
 
-        submit_button = ttk.Button(feedback_window, text="Submit", command=self.on_submit)
-        submit_button.pack(pady=20)
+        # Add time information
+        time_frame = ttk.Frame(main_frame)
+        time_frame.pack(pady=10)
+        
+        # Estimated time
+        ttk.Label(time_frame, text=f"Estimated: {self.task.estimated_time}m", 
+                 font=("Arial", 14)).pack(side="left", padx=10)
+        
+        # Actual time taken
+        duration = self.task.get_duration()
+        if duration:
+            minutes = int(duration / 60)
+            seconds = int(duration % 60)
+            time_taken = f"{minutes}m {seconds}s"
+            ttk.Label(time_frame, text=f"Actual: {time_taken}", 
+                     font=("Arial", 14)).pack(side="left", padx=10)
+
+        # Add programming-specific checkboxes if applicable
+        if self.task.will_program:
+            ttk.Label(main_frame, text="Programming Tasks", font=("Arial", 16)).pack(pady=20)
+            
+            # Create a frame for checkboxes with left alignment
+            checkbox_frame = ttk.Frame(main_frame)
+            checkbox_frame.pack(fill="x", padx=20)
+            
+            self.logged_in_obs_var = tk.BooleanVar(value=False)
+            ttk.Checkbutton(checkbox_frame, text="Relevant learnings, snippets and log in Obs", 
+                          variable=self.logged_in_obs_var).pack(anchor="w", pady=5)
+            
+            self.drafted_outline_var = tk.BooleanVar(value=False)
+            ttk.Checkbutton(checkbox_frame, text="Drafted speculative outline", 
+                          variable=self.drafted_outline_var).pack(anchor="w", pady=5)
+            
+            self.tracked_issues_var = tk.BooleanVar(value=False)
+            ttk.Checkbutton(checkbox_frame, text="Emerging issues tracked in gh", 
+                          variable=self.tracked_issues_var).pack(anchor="w", pady=5)
+            
+            self.changes_documented_var = tk.BooleanVar(value=False)
+            ttk.Checkbutton(checkbox_frame, text="Changes indicated in .md in project", 
+                          variable=self.changes_documented_var).pack(anchor="w", pady=5)
+            
+            self.test_covered_var = tk.BooleanVar(value=False)
+            ttk.Checkbutton(checkbox_frame, text="Test-covered", 
+                          variable=self.test_covered_var).pack(anchor="w", pady=5)
+
+            self.refactored_var = tk.BooleanVar(value=False)
+            ttk.Checkbutton(checkbox_frame, text="Refactored", 
+                          variable=self.refactored_var).pack(anchor="w", pady=5)
+
+        # Button frame for better organization
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(pady=20)
+
+        submit_button = ttk.Button(button_frame, text="Submit", command=self.on_submit)
+        submit_button.pack(side="left", padx=5)
+
+        nevermind_button = ttk.Button(button_frame, text="Nevermind", command=self.on_nevermind)
+        nevermind_button.pack(side="left", padx=5)
 
         self.feedback_window = feedback_window
 
@@ -202,9 +288,23 @@ class TaskManager:
         if result.isdigit() and 0 <= int(result) <= 10:
             self.task.result = int(result)
             self.task.comment = comment
+            
+            # Save programming-specific data if applicable
+            if self.task.will_program:
+                self.task.logged_in_obs = self.logged_in_obs_var.get()
+                self.task.drafted_outline = self.drafted_outline_var.get()
+                self.task.tracked_issues = self.tracked_issues_var.get()
+                self.task.changes_documented = self.changes_documented_var.get()
+                self.task.test_covered = self.test_covered_var.get()
+                self.task.refactored = self.refactored_var.get()
+            
             self.task.save_at_end()
             self.feedback_window.destroy()
             self.root.quit()
+
+    def on_nevermind(self):
+        self.feedback_window.destroy()
+        self.show_task_window()
 
 # Main function to run the app
 def main():
