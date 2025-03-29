@@ -10,6 +10,9 @@ import json
 
 import re
 
+# Get the directory where the script is located
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
 # Data Model for storing task information
 class Task:
     def __init__(self, goal="", estimated_time=0, larger_goal="", hypothesis="", will_program=False, public_facing=False):
@@ -215,7 +218,8 @@ class TaskManager:
         # larger goal
         # read goals directly from goals.txt
         try:
-            with open("goals.txt", "r") as f:
+            goals_path = os.path.join(SCRIPT_DIR, "goals.txt")
+            with open(goals_path, "r") as f:
                 larger_goals = [line.strip() for line in f if line.strip()]
         except FileNotFoundError:
             larger_goals = ["No goals defined"]
