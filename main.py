@@ -90,8 +90,8 @@ class Task:
         ]
 
         # Add checkbox states for the selected larger goal
-        if self.task.larger_goal in LARGER_GOALS:
-            for checkbox in LARGER_GOALS[self.task.larger_goal]:
+        if self.larger_goal in LARGER_GOALS:
+            for checkbox in LARGER_GOALS[self.larger_goal]:
                 task_data.append(f"{checkbox}={self.checkbox_states.get(checkbox, False)}")
 
         # Get the user data directory using appdirs
