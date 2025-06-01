@@ -13,9 +13,37 @@ import re
 # Get the directory where the script is located
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
+# Data structure for larger goals and their associated checkboxes
+LARGER_GOALS = {
+    "Programming": {
+        "checkboxes": [
+            "Relevant learnings, snippets and log in Obs",
+            "Drafted speculative outline",
+            "Emerging issues tracked in gh",
+            "Changes indicated in .md in project",
+            "Test-covered",
+            "Refactored",
+            "New state reflected in screenshots",
+            "Wrapped in user story"
+        ]
+    },
+    "Public-facing": {
+        "checkboxes": [
+            "Communication done or scheduled"
+        ]
+    },
+    "Research": {
+        "checkboxes": [
+            "Findings documented",
+            "Sources cited",
+            "Conclusions drawn"
+        ]
+    }
+}
+
 # Data Model for storing task information
 class Task:
-    def __init__(self, goal="", estimated_time=0, larger_goal="", hypothesis="", will_program=False, public_facing=False):
+    def __init__(self, goal="", estimated_time=0, larger_goal=""):
         self.goal = goal
         self.larger_goal = larger_goal
         self.estimated_time = estimated_time
@@ -23,20 +51,7 @@ class Task:
         self.end_time = None
         self.result = None
         self.comment = ""
-        self.hypothesis = hypothesis
-        self.will_program = will_program
-        self.public_facing = public_facing
-        # Programming-specific fields
-        self.logged_in_obs = False
-        self.drafted_outline = False
-        self.tracked_issues = False
-        self.changes_documented = False
-        self.test_covered = False
-        self.refactored = False
-        self.screenshots_updated = False
-        self.wrapped_in_story = False
-        # Public-facing specific fields
-        self.communication_done = False
+        self.checkbox_states = {}  # Will store checkbox states for the selected larger goal
 
     def set_start_time(self):
         self.start_time = time.time()
@@ -56,11 +71,8 @@ class Task:
         task_data = [
             f"goal={self.goal}",
             f"larger_goal={self.larger_goal}",
-            f"hypothesis={self.hypothesis}",
             f"estimated_time={self.estimated_time}",
-            f"start_time={start_time}",
-            f"will_program={self.will_program}",
-            f"public_facing={self.public_facing}",
+            f"start_time={start_time}"
         ]
 
         # Get the user data directory using appdirs
@@ -93,24 +105,10 @@ class Task:
             f"end_time={datetime.fromtimestamp(self.end_time).isoformat()}"
         ]
 
-        # Add programming-specific data if applicable
-        if self.will_program:
-            task_data.extend([
-                f"logged_in_obs={self.logged_in_obs}",
-                f"drafted_outline={self.drafted_outline}",
-                f"tracked_issues={self.tracked_issues}",
-                f"changes_documented={self.changes_documented}",
-                f"test_covered={self.test_covered}",
-                f"refactored={self.refactored}",
-                f"screenshots_updated={self.screenshots_updated}",
-                f"wrapped_in_story={self.wrapped_in_story}"
-            ])
-
-        # Add public-facing specific data if applicable
-        if self.public_facing:
-            task_data.extend([
-                f"communication_done={self.communication_done}"
-            ])
+        # Add checkbox states for the selected larger goal
+        if self.larger_goal in LARGER_GOALS:
+            for checkbox in LARGER_GOALS[self.larger_goal]["checkboxes"]:
+                task_data.append(f"{checkbox}={self.checkbox_states.get(checkbox, False)}")
 
         # Get the user data directory using appdirs
         app_name = "GoalTracker"
@@ -216,33 +214,10 @@ class TaskManager:
         self.goal_input.pack(pady=10)
 
         # larger goal
-        # read goals directly from goals.txt
-        try:
-            goals_path = os.path.join(SCRIPT_DIR, "goals.txt")
-            with open(goals_path, "r") as f:
-                larger_goals = [line.strip() for line in f if line.strip()]
-        except FileNotFoundError:
-            larger_goals = ["No goals defined"]
-        
         self.larger_goal = tk.StringVar()
-        self.larger_goal.set(larger_goals[0] if larger_goals else "No goals defined")
-        larger_goal_menu = ttk.OptionMenu(fullscreen_window, self.larger_goal, larger_goals[0] if larger_goals else "No goals defined", *larger_goals)
+        self.larger_goal.set(list(LARGER_GOALS.keys())[0])
+        larger_goal_menu = ttk.OptionMenu(fullscreen_window, self.larger_goal, list(LARGER_GOALS.keys())[0], *LARGER_GOALS.keys())
         larger_goal_menu.pack(pady=10)
-
-        # will program checkbox
-        self.will_program_var = tk.BooleanVar(value=False)
-        will_program_checkbox = ttk.Checkbutton(fullscreen_window, text="Will program?", variable=self.will_program_var)
-        will_program_checkbox.pack(pady=10)
-
-        # public facing checkbox
-        self.public_facing_var = tk.BooleanVar(value=False)
-        public_facing_checkbox = ttk.Checkbutton(fullscreen_window, text="Public-facing?", variable=self.public_facing_var)
-        public_facing_checkbox.pack(pady=10)
-
-        # hypothesis (another simple text input)
-        ttk.Label(fullscreen_window, text="Hypothesis", font=("Arial", 18)).pack(pady=20)
-        self.hypothesis_input = ttk.Entry(fullscreen_window, font=("Arial", 16), width=50)
-        self.hypothesis_input.pack(pady=10)
 
         # time needed
         ttk.Label(fullscreen_window, text="Estimated time needed (minutes)", font=("Arial", 18)).pack(pady=20)
@@ -263,9 +238,6 @@ class TaskManager:
             self.task.estimated_time = int(estimated_time)
             self.task.set_start_time()
             self.task.larger_goal = self.larger_goal.get()
-            self.task.hypothesis = self.hypothesis_input.get()
-            self.task.will_program = self.will_program_var.get()
-            self.task.public_facing = self.public_facing_var.get()
             self.task.save_at_beginning()
 
             self.fullscreen_window.destroy()
@@ -335,57 +307,21 @@ class TaskManager:
             ttk.Label(time_frame, text=f"Actual: {time_taken}", 
                      font=("Arial", 16)).pack(side="left", padx=10)
 
-        # Add programming-specific checkboxes if applicable
-        if self.task.will_program:
-            ttk.Label(content_frame, text="Programming Tasks", font=("Arial", 18)).pack(pady=15)
+        # Add checkboxes based on the selected larger goal
+        if self.task.larger_goal in LARGER_GOALS:
+            ttk.Label(content_frame, text=f"{self.task.larger_goal} Tasks", font=("Arial", 18)).pack(pady=15)
             
             # Create a frame for checkboxes with left alignment
             checkbox_frame = ttk.Frame(content_frame)
             checkbox_frame.pack(fill="x", padx=20)
             
-            self.logged_in_obs_var = tk.BooleanVar(value=False)
-            ttk.Checkbutton(checkbox_frame, text="Relevant learnings, snippets and log in Obs", 
-                          variable=self.logged_in_obs_var, style="Large.TCheckbutton").pack(anchor="w", pady=5)
-            
-            self.drafted_outline_var = tk.BooleanVar(value=False)
-            ttk.Checkbutton(checkbox_frame, text="Drafted speculative outline", 
-                          variable=self.drafted_outline_var, style="Large.TCheckbutton").pack(anchor="w", pady=5)
-            
-            self.tracked_issues_var = tk.BooleanVar(value=False)
-            ttk.Checkbutton(checkbox_frame, text="Emerging issues tracked in gh", 
-                          variable=self.tracked_issues_var, style="Large.TCheckbutton").pack(anchor="w", pady=5)
-            
-            self.changes_documented_var = tk.BooleanVar(value=False)
-            ttk.Checkbutton(checkbox_frame, text="Changes indicated in .md in project", 
-                          variable=self.changes_documented_var, style="Large.TCheckbutton").pack(anchor="w", pady=5)
-            
-            self.test_covered_var = tk.BooleanVar(value=False)
-            ttk.Checkbutton(checkbox_frame, text="Test-covered", 
-                          variable=self.test_covered_var, style="Large.TCheckbutton").pack(anchor="w", pady=5)
-
-            self.refactored_var = tk.BooleanVar(value=False)
-            ttk.Checkbutton(checkbox_frame, text="Refactored", 
-                          variable=self.refactored_var, style="Large.TCheckbutton").pack(anchor="w", pady=5)
-
-            self.screenshots_updated_var = tk.BooleanVar(value=False)
-            ttk.Checkbutton(checkbox_frame, text="New state reflected in screenshots", 
-                          variable=self.screenshots_updated_var, style="Large.TCheckbutton").pack(anchor="w", pady=5)
-
-            self.wrapped_in_story_var = tk.BooleanVar(value=False)
-            ttk.Checkbutton(checkbox_frame, text="Wrapped in user story", 
-                          variable=self.wrapped_in_story_var, style="Large.TCheckbutton").pack(anchor="w", pady=5)
-
-        # Add public-facing specific checkboxes if applicable
-        if self.task.public_facing:
-            ttk.Label(content_frame, text="Public-facing Tasks", font=("Arial", 18)).pack(pady=15)
-            
-            # Create a frame for checkboxes with left alignment
-            public_checkbox_frame = ttk.Frame(content_frame)
-            public_checkbox_frame.pack(fill="x", padx=20)
-            
-            self.communication_done_var = tk.BooleanVar(value=False)
-            ttk.Checkbutton(public_checkbox_frame, text="Communication done or scheduled", 
-                          variable=self.communication_done_var, style="Large.TCheckbutton").pack(anchor="w", pady=5)
+            # Create variables and checkboxes for each task
+            self.checkbox_vars = {}
+            for checkbox_text in LARGER_GOALS[self.task.larger_goal]["checkboxes"]:
+                var = tk.BooleanVar(value=False)
+                self.checkbox_vars[checkbox_text] = var
+                ttk.Checkbutton(checkbox_frame, text=checkbox_text, 
+                              variable=var, style="Large.TCheckbutton").pack(anchor="w", pady=5)
 
         # Button frame for better organization
         button_frame = ttk.Frame(content_frame)
@@ -406,20 +342,10 @@ class TaskManager:
             self.task.result = int(result)
             self.task.comment = comment
             
-            # Save programming-specific data if applicable
-            if self.task.will_program:
-                self.task.logged_in_obs = self.logged_in_obs_var.get()
-                self.task.drafted_outline = self.drafted_outline_var.get()
-                self.task.tracked_issues = self.tracked_issues_var.get()
-                self.task.changes_documented = self.changes_documented_var.get()
-                self.task.test_covered = self.test_covered_var.get()
-                self.task.refactored = self.refactored_var.get()
-                self.task.screenshots_updated = self.screenshots_updated_var.get()
-                self.task.wrapped_in_story = self.wrapped_in_story_var.get()
-            
-            # Save public-facing specific data if applicable
-            if self.task.public_facing:
-                self.task.communication_done = self.communication_done_var.get()
+            # Save checkbox states
+            if hasattr(self, 'checkbox_vars'):
+                for checkbox_text, var in self.checkbox_vars.items():
+                    self.task.checkbox_states[checkbox_text] = var.get()
             
             self.task.save_at_end()
             self.feedback_window.destroy()
