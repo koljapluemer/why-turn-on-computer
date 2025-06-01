@@ -90,8 +90,8 @@ class Task:
         ]
 
         # Add checkbox states for the selected larger goal
-        if self.larger_goal in LARGER_GOALS:
-            for checkbox in LARGER_GOALS[self.larger_goal]["checkboxes"]:
+        if self.task.larger_goal in LARGER_GOALS:
+            for checkbox in LARGER_GOALS[self.task.larger_goal]:
                 task_data.append(f"{checkbox}={self.checkbox_states.get(checkbox, False)}")
 
         # Get the user data directory using appdirs
@@ -301,7 +301,7 @@ class TaskManager:
             
             # Create variables and checkboxes for each task
             self.checkbox_vars = {}
-            for checkbox_text in LARGER_GOALS[self.task.larger_goal]["checkboxes"]:
+            for checkbox_text in LARGER_GOALS[self.task.larger_goal]:
                 var = tk.BooleanVar(value=False)
                 self.checkbox_vars[checkbox_text] = var
                 ttk.Checkbutton(checkbox_frame, text=checkbox_text, 

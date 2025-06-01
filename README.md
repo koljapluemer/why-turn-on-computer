@@ -16,12 +16,10 @@ A little tkinter app running on autostart asking me why I turned on my computer,
 JSON file defining goal categories and their associated checkboxes. Structure:
 ```json
 {
-    "Category Name": {
-        "checkboxes": [
-            "Checkbox 1",
-            "Checkbox 2"
-        ]
-    }
+    "Category Name": [
+        "Checkbox 1",
+        "Checkbox 2"
+    ]
 }
 ```
 
