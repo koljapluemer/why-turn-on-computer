@@ -13,33 +13,17 @@ import re
 # Get the directory where the script is located
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Data structure for larger goals and their associated checkboxes
-LARGER_GOALS = {
-    "Programming": {
-        "checkboxes": [
-            "Relevant learnings, snippets and log in Obs",
-            "Drafted speculative outline",
-            "Emerging issues tracked in gh",
-            "Changes indicated in .md in project",
-            "Test-covered",
-            "Refactored",
-            "New state reflected in screenshots",
-            "Wrapped in user story"
-        ]
-    },
-    "Public-facing": {
-        "checkboxes": [
-            "Communication done or scheduled"
-        ]
-    },
-    "Research": {
-        "checkboxes": [
-            "Findings documented",
-            "Sources cited",
-            "Conclusions drawn"
-        ]
-    }
-}
+def load_larger_goals():
+    """Load larger goals from goals.json file. Returns empty dict if file not found."""
+    try:
+        goals_path = os.path.join(SCRIPT_DIR, "goals.json")
+        with open(goals_path, "r") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {}
+
+# Load larger goals from JSON file
+LARGER_GOALS = load_larger_goals()
 
 # Data Model for storing task information
 class Task:
