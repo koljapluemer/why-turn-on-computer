@@ -1,0 +1,19 @@
+[project]
+name = "why-turn-on-computer"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Kolja Sam",email = "github@koljapluemer.com"}
+]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "cryptography (==43.0.1)",
+    "pywebview (==5.2)",
+    "appdirs (==1.4.4)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
