@@ -1,3 +1,0 @@
-cryptography==43.0.1
-pywebview==5.2
-appdirs==1.4.4
