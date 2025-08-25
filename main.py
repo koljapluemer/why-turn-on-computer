@@ -1,41 +1,33 @@
 import tkinter as tk
 from tkinter import ttk
-from tkinter import simpledialog
 import time
 from datetime import datetime
-
-from appdirs import user_config_dir, user_data_dir
 import os
-import json
-
-import re
+import subprocess
 
 # Get the directory where the script is located
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
-def load_larger_goals():
-    """Load larger goals from goals.json file. Returns empty dict if file not found."""
+def load_purpose():
+    """Load purpose from purpose.txt file. Returns empty string if file not found."""
     try:
-        goals_path = os.path.join(SCRIPT_DIR, "goals.json")
-        with open(goals_path, "r") as f:
-            return json.load(f)
+        purpose_path = os.path.join(SCRIPT_DIR, "purpose.txt")
+        with open(purpose_path, "r") as f:
+            return f.read().strip()
     except FileNotFoundError:
-        return {}
+        return ""
 
-# Load larger goals from JSON file
-LARGER_GOALS = load_larger_goals()
+# Load purpose from text file
+PURPOSE = load_purpose()
 
-# Data Model for storing task information
 class Task:
-    def __init__(self, goal="", estimated_time=0, larger_goal=""):
-        self.goal = goal
-        self.larger_goal = larger_goal
-        self.estimated_time = estimated_time
+    def __init__(self):
+        self.reason = ""
+        self.how_helps = ""
         self.start_time = None
         self.end_time = None
-        self.result = None
-        self.comment = ""
-        self.checkbox_states = {}  # Will store checkbox states for the selected larger goal
+        self.goal_fulfilled = None
+        self.actually_helped = None
 
     def set_start_time(self):
         self.start_time = time.time()
@@ -48,70 +40,31 @@ class Task:
             return self.end_time - self.start_time
         return None
 
-    def save_at_beginning(self):
-        # Prepare the data to be saved in NAME=VALUE format
-        duration = self.get_duration()
+    def save_data(self):
         start_time = datetime.fromtimestamp(self.start_time).isoformat()
-        task_data = [
-            f"goal={self.goal}",
-            f"larger_goal={self.larger_goal}",
-            f"estimated_time={self.estimated_time}",
-            f"start_time={start_time}"
-        ]
-
-        # Get the user data directory using appdirs
-        app_name = "GoalTracker"
-        app_author = "Kolja Sam"  # Adjust this if needed
-        data_dir = user_data_dir(app_name, app_author)
-
-        # Ensure the directory exists
-        os.makedirs(data_dir, exist_ok=True)
-
-        # Create a new text file with a timestamp in the filename
-        log_file_path = os.path.join(data_dir, f'goal_{start_time}.txt')
-
-        # Write each task data field as NAME=VALUE on a new line
-        with open(log_file_path, 'w') as log_file:
-            for line in task_data:
-                log_file.write(f"{line}\n")
-
-        print(f"Task data saved to {log_file_path}")
-
-    def save_at_end(self):
-        # Prepare the data to be saved in NAME=VALUE format
         duration = self.get_duration()
-        start_time = datetime.fromtimestamp(self.start_time).isoformat()
-
+        
         task_data = [
-            f"result={self.result}",
-            f"comment={self.comment}",
+            f"start_time={start_time}",
+            f"reason={self.reason}",
+            f"how_helps={self.how_helps}",
             f"duration={duration}",
+            f"goal_fulfilled={self.goal_fulfilled}",
+            f"actually_helped={self.actually_helped}",
             f"end_time={datetime.fromtimestamp(self.end_time).isoformat()}"
         ]
 
-        # Add checkbox states for the selected larger goal
-        if self.larger_goal in LARGER_GOALS:
-            for checkbox in LARGER_GOALS[self.larger_goal]:
-                task_data.append(f"{checkbox}={self.checkbox_states.get(checkbox, False)}")
-
-        # Get the user data directory using appdirs
-        app_name = "GoalTracker"
-        app_author = "Kolja Sam"  # Adjust this if needed
-        data_dir = user_data_dir(app_name, app_author)
-
-        # Ensure the directory exists
+        data_dir = os.path.join(os.path.expanduser("~"), ".why_computer")
         os.makedirs(data_dir, exist_ok=True)
-
-        log_file_path = os.path.join(data_dir, f'goal_{start_time}.txt')
-
-        # Write each task data field as NAME=VALUE on a new line
-        with open(log_file_path, 'a') as log_file:
+        
+        log_file_path = os.path.join(data_dir, f'session_{start_time}.txt')
+        
+        with open(log_file_path, 'w') as log_file:
             for line in task_data:
                 log_file.write(f"{line}\n")
+        
+        print(f"Session data saved to {log_file_path}")
 
-        print(f"Task data saved to {log_file_path}")
-
-# Controller class to manage app flow
 class TaskManager:
     def __init__(self, root):
         self.root = root
@@ -119,130 +72,73 @@ class TaskManager:
         
         # Configure dark theme
         style = ttk.Style()
-        style.theme_use('clam')  # Use clam as base theme
+        style.theme_use('clam')
         
-        # Configure colors
+        # Configure colors for dark theme
         style.configure(".", 
             background="#2b2b2b",
             foreground="#ffffff",
             fieldbackground="#3c3f41",
-            troughcolor="#3c3f41",
             selectbackground="#4b6eaf",
             selectforeground="#ffffff"
         )
         
-        # Configure specific widgets
-        style.configure("TLabel", 
-            background="#2b2b2b",
-            foreground="#ffffff"
-        )
+        style.configure("TLabel", background="#2b2b2b", foreground="#ffffff")
+        style.configure("TEntry", fieldbackground="#3c3f41", foreground="#ffffff")
+        style.configure("TButton", background="#3c3f41", foreground="#ffffff", padding=5)
+        style.configure("TFrame", background="#2b2b2b")
+        style.configure("TRadiobutton", background="#2b2b2b", foreground="#ffffff")
         
-        style.configure("TEntry",
-            fieldbackground="#3c3f41",
-            foreground="#ffffff"
-        )
-        
-        style.configure("TButton",
-            background="#3c3f41",
-            foreground="#ffffff",
-            padding=5
-        )
-        
-        style.configure("TCheckbutton",
-            background="#2b2b2b",
-            foreground="#ffffff"
-        )
-        
-        style.configure("TFrame",
-            background="#2b2b2b"
-        )
-        
-        style.configure("TText",
-            fieldbackground="#3c3f41",
-            foreground="#ffffff"
-        )
-        
-        style.configure("Large.TCheckbutton", 
-            font=("Arial", 14),
-            background="#2b2b2b",
-            foreground="#ffffff"
-        )
-        
-        style.configure("Large.TButton", 
-            font=("Arial", 14),
-            background="#3c3f41",
-            foreground="#ffffff",
-            padding=5
-        )
-        
-        # Configure OptionMenu
-        style.configure("TMenubutton",
-            background="#3c3f41",
-            foreground="#ffffff"
-        )
-
-        # Set root window background
         self.root.configure(bg="#2b2b2b")
-        
         self.show_fullscreen_input_window()
 
     def show_fullscreen_input_window(self):
         fullscreen_window = tk.Toplevel(self.root)
         fullscreen_window.attributes("-fullscreen", True)
         fullscreen_window.attributes("-topmost", True)
-        fullscreen_window.configure(bg="#2b2b2b")  # Set window background
+        fullscreen_window.configure(bg="#2b2b2b")
 
-        ttk.Label(fullscreen_window, text="Why did you turn on your computer?", font=("Arial", 24)).pack(pady=50)
+        ttk.Label(fullscreen_window, text="Why did you turn on your computer?", font=("Arial", 24)).pack(pady=30)
         
-        self.goal_input = ttk.Entry(fullscreen_window, font=("Arial", 20), width=50)
-        self.goal_input.pack(pady=10)
+        self.reason_input = ttk.Entry(fullscreen_window, font=("Arial", 20), width=60)
+        self.reason_input.pack(pady=10)
 
-        # larger goal
-        self.larger_goal = tk.StringVar()
-        self.larger_goal.set(list(LARGER_GOALS.keys())[0])
-        larger_goal_menu = ttk.OptionMenu(fullscreen_window, self.larger_goal, list(LARGER_GOALS.keys())[0], *LARGER_GOALS.keys())
-        larger_goal_menu.pack(pady=10)
-
-        # time needed
-        ttk.Label(fullscreen_window, text="Estimated time needed (minutes)", font=("Arial", 18)).pack(pady=20)
+        ttk.Label(fullscreen_window, text=f"How will this help with: {PURPOSE}?", font=("Arial", 18)).pack(pady=30)
         
-        self.time_input = ttk.Entry(fullscreen_window, font=("Arial", 16), width=10)
-        self.time_input.pack(pady=10)
+        self.how_helps_input = ttk.Entry(fullscreen_window, font=("Arial", 16), width=60)
+        self.how_helps_input.pack(pady=10)
         
         confirm_button = ttk.Button(fullscreen_window, text="Confirm", command=self.on_confirm)
-        confirm_button.pack(pady=20)
+        confirm_button.pack(pady=30)
 
         self.fullscreen_window = fullscreen_window
 
     def on_confirm(self):
-        goal = self.goal_input.get()
-        estimated_time = self.time_input.get()
-        if goal and estimated_time.isdigit():
-            self.task.goal = goal
-            self.task.estimated_time = int(estimated_time)
+        reason = self.reason_input.get().strip()
+        how_helps = self.how_helps_input.get().strip()
+        if reason and how_helps:
+            self.task.reason = reason
+            self.task.how_helps = how_helps
             self.task.set_start_time()
-            self.task.larger_goal = self.larger_goal.get()
-            self.task.save_at_beginning()
-
+            
             self.fullscreen_window.destroy()
             self.show_task_window()
 
     def show_task_window(self):
         task_window = tk.Toplevel(self.root)
-        task_window.overrideredirect(True)  # Frameless
-        task_window.geometry(f"500x20+100+{self.root.winfo_screenheight()-20}")  # Small height of 15px
+        task_window.overrideredirect(True)
+        task_window.geometry(f"600x25+100+{self.root.winfo_screenheight()-25}")
         task_window.attributes("-topmost", True)
-        task_window.configure(bg="#2b2b2b")  # Set window background
+        task_window.configure(bg="#2b2b2b")
 
-        # Frame to hold the content with no margins
-        content_frame = ttk.Frame(task_window, padding=(0, 0, 0, 0))
+        content_frame = ttk.Frame(task_window, padding=(5, 2, 5, 2))
         content_frame.pack(fill="both", expand=True)
 
-        goal_label = ttk.Label(content_frame, text=f"{self.task.goal}", font=("Arial", 10))  # Smaller font
-        goal_label.pack(side="left", padx=(2, 5), pady=0)  # Minimal padding
+        reason_label = ttk.Label(content_frame, text=f"{self.task.reason}", font=("Arial", 10))
+        reason_label.pack(side="left", padx=(2, 5))
 
         finish_button = ttk.Button(content_frame, text="Finish", command=self.on_finish)
-        finish_button.pack(side="right", padx=(5, 2), pady=0)  # Minimal padding
+        finish_button.pack(side="right", padx=(5, 2))
 
         self.task_window = task_window
 
@@ -253,96 +149,80 @@ class TaskManager:
 
     def show_feedback_window(self):
         feedback_window = tk.Toplevel(self.root)
-        feedback_window.title("Task Feedback")
+        feedback_window.title("Session Feedback")
         feedback_window.attributes("-fullscreen", True)
         feedback_window.attributes("-topmost", True)
-        feedback_window.configure(bg="#2b2b2b")  # Set window background
+        feedback_window.configure(bg="#2b2b2b")
 
-        # Main container frame
-        main_frame = ttk.Frame(feedback_window, padding="20")
+        main_frame = ttk.Frame(feedback_window, padding="40")
         main_frame.pack(expand=True, fill="both")
 
-        # Content frame with max width
         content_frame = ttk.Frame(main_frame)
         content_frame.pack(expand=True)
 
-        ttk.Label(content_frame, text="Goal Reached (0-10)", font=("Arial", 18)).pack(pady=15)
-        self.result_input = ttk.Entry(content_frame, font=("Arial", 16), width=10)
-        self.result_input.pack(pady=5)
-
-        ttk.Label(content_frame, text="Comments", font=("Arial", 18)).pack(pady=15)
-        self.comment_input = tk.Text(content_frame, font=("Arial", 16), height=4, width=50)
-        self.comment_input.pack(pady=5)
-
-        # Add time information
-        time_frame = ttk.Frame(content_frame)
-        time_frame.pack(pady=10)
+        # Show what they did
+        ttk.Label(content_frame, text="What you did:", font=("Arial", 18, "bold")).pack(pady=(0, 5))
+        ttk.Label(content_frame, text=self.task.reason, font=("Arial", 16)).pack(pady=(0, 20))
         
-        # Estimated time
-        ttk.Label(time_frame, text=f"Estimated: {self.task.estimated_time}m", 
-                 font=("Arial", 16)).pack(side="left", padx=10)
+        # Show how it was supposed to help
+        ttk.Label(content_frame, text="How this was supposed to help with purpose:", font=("Arial", 18, "bold")).pack(pady=(0, 5))
+        ttk.Label(content_frame, text=self.task.how_helps, font=("Arial", 16)).pack(pady=(0, 30))
+
+        # Goal fulfilled Likert scale
+        ttk.Label(content_frame, text="Was your goal fulfilled?", font=("Arial", 18)).pack(pady=(0, 10))
+        goal_frame = ttk.Frame(content_frame)
+        goal_frame.pack(pady=(0, 20))
         
-        # Actual time taken
-        duration = self.task.get_duration()
-        if duration:
-            minutes = int(duration / 60)
-            seconds = int(duration % 60)
-            time_taken = f"{minutes}m {seconds}s"
-            ttk.Label(time_frame, text=f"Actual: {time_taken}", 
-                     font=("Arial", 16)).pack(side="left", padx=10)
+        ttk.Label(goal_frame, text="Not at all", font=("Arial", 12)).pack(side="left")
+        self.goal_fulfilled = tk.IntVar(value=3)
+        for i in range(1, 6):
+            ttk.Radiobutton(goal_frame, text=str(i), variable=self.goal_fulfilled, value=i).pack(side="left", padx=5)
+        ttk.Label(goal_frame, text="Very much", font=("Arial", 12)).pack(side="left")
 
-        # Add checkboxes based on the selected larger goal
-        if self.task.larger_goal in LARGER_GOALS:
-            ttk.Label(content_frame, text=f"{self.task.larger_goal} Tasks", font=("Arial", 18)).pack(pady=15)
-            
-            # Create a frame for checkboxes with left alignment
-            checkbox_frame = ttk.Frame(content_frame)
-            checkbox_frame.pack(fill="x", padx=20)
-            
-            # Create variables and checkboxes for each task
-            self.checkbox_vars = {}
-            for checkbox_text in LARGER_GOALS[self.task.larger_goal]:
-                var = tk.BooleanVar(value=False)
-                self.checkbox_vars[checkbox_text] = var
-                ttk.Checkbutton(checkbox_frame, text=checkbox_text, 
-                              variable=var, style="Large.TCheckbutton").pack(anchor="w", pady=5)
+        # Actually helped Likert scale
+        ttk.Label(content_frame, text="Did this actually help with your purpose?", font=("Arial", 18)).pack(pady=(20, 10))
+        help_frame = ttk.Frame(content_frame)
+        help_frame.pack(pady=(0, 30))
+        
+        ttk.Label(help_frame, text="Not at all", font=("Arial", 12)).pack(side="left")
+        self.actually_helped = tk.IntVar(value=3)
+        for i in range(1, 6):
+            ttk.Radiobutton(help_frame, text=str(i), variable=self.actually_helped, value=i).pack(side="left", padx=5)
+        ttk.Label(help_frame, text="Very much", font=("Arial", 12)).pack(side="left")
 
-        # Button frame for better organization
+        # Buttons
         button_frame = ttk.Frame(content_frame)
-        button_frame.pack(pady=20)
+        button_frame.pack(pady=30)
 
-        submit_button = ttk.Button(button_frame, text="Submit", command=self.on_submit, style="Large.TButton")
-        submit_button.pack(side="left", padx=10)
-
-        nevermind_button = ttk.Button(button_frame, text="Nevermind", command=self.on_nevermind, style="Large.TButton")
-        nevermind_button.pack(side="left", padx=10)
+        ttk.Button(button_frame, text="Nevermind", command=self.on_nevermind).pack(side="left", padx=10)
+        ttk.Button(button_frame, text="Save", command=self.on_save).pack(side="left", padx=10)
+        ttk.Button(button_frame, text="Save and Shutdown", command=self.on_save_shutdown).pack(side="left", padx=10)
+        ttk.Button(button_frame, text="Save and Shutdown +5", command=self.on_save_shutdown_5).pack(side="left", padx=10)
 
         self.feedback_window = feedback_window
 
-    def on_submit(self):
-        result = self.result_input.get()
-        comment = self.comment_input.get("1.0", tk.END).strip()
-        if result.isdigit() and 0 <= int(result) <= 10:
-            self.task.result = int(result)
-            self.task.comment = comment
-            
-            # Save checkbox states
-            if hasattr(self, 'checkbox_vars'):
-                for checkbox_text, var in self.checkbox_vars.items():
-                    self.task.checkbox_states[checkbox_text] = var.get()
-            
-            self.task.save_at_end()
-            self.feedback_window.destroy()
-            self.root.quit()
+    def on_save(self):
+        self.task.goal_fulfilled = self.goal_fulfilled.get()
+        self.task.actually_helped = self.actually_helped.get()
+        self.task.save_data()
+        self.feedback_window.destroy()
+        self.root.quit()
+
+    def on_save_shutdown(self):
+        self.on_save()
+        subprocess.run(["shutdown", "-h", "now"])
+
+    def on_save_shutdown_5(self):
+        self.on_save()
+        subprocess.run(["shutdown", "-h", "+5"])
 
     def on_nevermind(self):
         self.feedback_window.destroy()
         self.show_task_window()
 
-# Main function to run the app
 def main():
     root = tk.Tk()
-    root.withdraw()  # Hide the root window
+    root.withdraw()
     task_manager = TaskManager(root)
     root.mainloop()
 

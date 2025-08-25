@@ -4,11 +4,16 @@
 
 A little tkinter app running on autostart asking me why I turned on my computer, and in the end checks whether I did what I set out to do. In between, lives as a little mini-window on the bottom edge of my screen.
 
+## Software
+
+- A simple one-script python tkinter app (`main.py`)
+- Can be built, but can also just be run
+
 ## Running it
 
-- default python app. make a `venv`, install reqs, run `main.py`.
-- to be really effective, put the script (e.g. `python3 ~/GITHUB/why-turn-on-computer/main.py`) in OS's autostart
-- create a `goals.json` file in the project directory with your goal categories and their associated checkboxes
+- `poetry run python main.py`
+- to be really effective, put the script in OS's autostart
+- create `purpose.txt` with an important goal (just plaintext)
 
 ## Configuration
 

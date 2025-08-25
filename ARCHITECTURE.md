@@ -1,4 +1,0 @@
-- A simple one-script python tkinter app (`main.py`)
-- Can be built, but can also just be run
-- Will undergo meta-changes as my approach to goals changes
-- Mostly vibe-coded (manual testing immediately follows, since this software pops up everytime I turn on my computer)
