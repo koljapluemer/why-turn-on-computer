@@ -28,6 +28,7 @@ class Task:
         self.end_time = None
         self.goal_fulfilled = None
         self.actually_helped = None
+        self.stay_on_goal = None
         self.comment = ""
 
     def set_start_time(self):
@@ -52,6 +53,7 @@ class Task:
             f"duration={duration}",
             f"goal_fulfilled={self.goal_fulfilled}",
             f"actually_helped={self.actually_helped}",
+            f"stay_on_goal={self.stay_on_goal}",
             f"comment={self.comment}",
             f"end_time={datetime.fromtimestamp(self.end_time).isoformat()}"
         ]
@@ -192,6 +194,17 @@ class TaskManager:
             ttk.Radiobutton(help_frame, text=str(i), variable=self.actually_helped, value=i).pack(side="left", padx=5)
         ttk.Label(help_frame, text="Very much", font=("Arial", 12)).pack(side="left")
 
+        # Stay on goal Likert scale
+        ttk.Label(content_frame, text="Did you stay on the goal?", font=("Arial", 18)).pack(pady=(20, 10))
+        stay_on_goal_frame = ttk.Frame(content_frame)
+        stay_on_goal_frame.pack(pady=(0, 20))
+        
+        ttk.Label(stay_on_goal_frame, text="Not at all", font=("Arial", 12)).pack(side="left")
+        self.stay_on_goal = tk.IntVar(value=3)
+        for i in range(1, 6):
+            ttk.Radiobutton(stay_on_goal_frame, text=str(i), variable=self.stay_on_goal, value=i).pack(side="left", padx=5)
+        ttk.Label(stay_on_goal_frame, text="Very much", font=("Arial", 12)).pack(side="left")
+
         # Comment field
         ttk.Label(content_frame, text="Additional comments (optional):", font=("Arial", 18)).pack(pady=(20, 10))
         comment_frame = ttk.Frame(content_frame)
@@ -215,6 +228,7 @@ class TaskManager:
     def on_save(self):
         self.task.goal_fulfilled = self.goal_fulfilled.get()
         self.task.actually_helped = self.actually_helped.get()
+        self.task.stay_on_goal = self.stay_on_goal.get()
         self.task.comment = self.comment_text.get("1.0", tk.END).strip()
         self.task.save_data()
         self.feedback_window.destroy()
