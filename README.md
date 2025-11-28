@@ -26,21 +26,3 @@ The built executable requires tkinter libraries on Ubuntu/Debian:
 ```bash
 sudo apt-get install python3-tk tk8.6
 ```
-
-## Configuration
-
-### goals.json
-JSON file defining goal categories and their associated checkboxes. Structure:
-```json
-{
-    "Category Name": [
-        "Checkbox 1",
-        "Checkbox 2"
-    ]
-}
-```
-
-## Documentation
-
-
-- whole thing is mostly controlled by `
