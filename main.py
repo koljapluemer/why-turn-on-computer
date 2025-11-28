@@ -135,6 +135,7 @@ class TaskManager:
 
         self.purpose_input = ttk.Entry(purpose_window, font=("Arial", 20), width=60)
         self.purpose_input.pack(pady=10)
+        self.purpose_input.bind("<Return>", lambda e: self.on_purpose_confirm(purpose_window))
 
         confirm_button = ttk.Button(purpose_window, text="Save Purpose", command=lambda: self.on_purpose_confirm(purpose_window))
         confirm_button.pack(pady=30)
@@ -166,11 +167,13 @@ class TaskManager:
 
         self.reason_input = ttk.Entry(main_frame, font=("Arial", 20), width=60)
         self.reason_input.pack(pady=10)
+        self.reason_input.bind("<Return>", lambda e: self.on_confirm())
 
         ttk.Label(main_frame, text=f"How will this help with: {self.purpose}?", font=("Arial", 18)).pack(pady=30)
 
         self.how_helps_input = ttk.Entry(main_frame, font=("Arial", 16), width=60)
         self.how_helps_input.pack(pady=10)
+        self.how_helps_input.bind("<Return>", lambda e: self.on_confirm())
 
         confirm_button = ttk.Button(main_frame, text="Confirm", command=self.on_confirm)
         confirm_button.pack(pady=30)
