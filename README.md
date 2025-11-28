@@ -16,6 +16,13 @@ A little tkinter app running on autostart asking me why I turned on my computer,
 - on first run, you'll be prompted to set your purpose
 - you can change your purpose anytime using the "Change Purpose" button
 
+### Dependencies
+
+The built executable requires tkinter libraries on Ubuntu/Debian:
+```bash
+sudo apt-get install python3-tk tk8.6
+```
+
 ## Configuration
 
 ### goals.json
