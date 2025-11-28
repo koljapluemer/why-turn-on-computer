@@ -4,6 +4,10 @@
 
 A little tkinter app running on autostart asking me why I turned on my computer, and in the end checks whether I did what I set out to do. In between, lives as a little mini-window on the bottom edge of my screen.
 
+> [!IMPORTANT]
+> Put this into your computer's autostart!
+
+
 ## Software
 
 - A simple one-script python tkinter app (`main.py`)
