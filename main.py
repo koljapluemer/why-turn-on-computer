@@ -4,21 +4,42 @@ import time
 from datetime import datetime
 import os
 import subprocess
+import json
+import appdirs
 
-# Get the directory where the script is located
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+# App configuration
+APP_NAME = "why-turn-on-computer"
+APP_AUTHOR = "KoljaSam"
 
-def load_purpose():
-    """Load purpose from purpose.txt file. Returns empty string if file not found."""
+def get_config_dir():
+    """Get the config directory using appdirs."""
+    config_dir = appdirs.user_config_dir(APP_NAME, APP_AUTHOR)
+    os.makedirs(config_dir, exist_ok=True)
+    return config_dir
+
+def get_config_file_path():
+    """Get the full path to the config file."""
+    return os.path.join(get_config_dir(), "config.json")
+
+def load_config():
+    """Load config from JSON file. Returns dict with config or empty dict if not found."""
     try:
-        purpose_path = os.path.join(SCRIPT_DIR, "purpose.txt")
-        with open(purpose_path, "r") as f:
-            return f.read().strip()
-    except FileNotFoundError:
-        return ""
+        config_path = get_config_file_path()
+        with open(config_path, "r") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
 
-# Load purpose from text file
-PURPOSE = load_purpose()
+def save_config(config):
+    """Save config to JSON file."""
+    config_path = get_config_file_path()
+    with open(config_path, "w") as f:
+        json.dump(config, f, indent=2)
+
+def get_purpose():
+    """Get purpose from config."""
+    config = load_config()
+    return config.get("purpose", "")
 
 class Task:
     def __init__(self):
@@ -73,28 +94,63 @@ class TaskManager:
     def __init__(self, root):
         self.root = root
         self.task = Task()
-        
+        self.purpose = get_purpose()
+
         # Configure dark theme
         style = ttk.Style()
         style.theme_use('clam')
-        
+
         # Configure colors for dark theme
-        style.configure(".", 
+        style.configure(".",
             background="#2b2b2b",
             foreground="#ffffff",
             fieldbackground="#3c3f41",
             selectbackground="#4b6eaf",
             selectforeground="#ffffff"
         )
-        
+
         style.configure("TLabel", background="#2b2b2b", foreground="#ffffff")
         style.configure("TEntry", fieldbackground="#3c3f41", foreground="#ffffff")
         style.configure("TButton", background="#3c3f41", foreground="#ffffff", padding=5)
         style.configure("TFrame", background="#2b2b2b")
         style.configure("TRadiobutton", background="#2b2b2b", foreground="#ffffff")
-        
+
         self.root.configure(bg="#2b2b2b")
-        self.show_fullscreen_input_window()
+
+        # Check if purpose is set, if not show purpose setup screen
+        if not self.purpose:
+            self.show_purpose_setup_window()
+        else:
+            self.show_fullscreen_input_window()
+
+    def show_purpose_setup_window(self):
+        """Show fullscreen window to set up purpose for first-time users."""
+        purpose_window = tk.Toplevel(self.root)
+        purpose_window.attributes("-fullscreen", True)
+        purpose_window.attributes("-topmost", True)
+        purpose_window.configure(bg="#2b2b2b")
+
+        ttk.Label(purpose_window, text="Welcome! Let's set your purpose.", font=("Arial", 24)).pack(pady=30)
+        ttk.Label(purpose_window, text="What is your main goal or purpose?", font=("Arial", 18)).pack(pady=20)
+
+        self.purpose_input = ttk.Entry(purpose_window, font=("Arial", 20), width=60)
+        self.purpose_input.pack(pady=10)
+
+        confirm_button = ttk.Button(purpose_window, text="Save Purpose", command=lambda: self.on_purpose_confirm(purpose_window))
+        confirm_button.pack(pady=30)
+
+        self.purpose_window = purpose_window
+
+    def on_purpose_confirm(self, window):
+        """Save the purpose and proceed to main screen."""
+        purpose = self.purpose_input.get().strip()
+        if purpose:
+            config = load_config()
+            config["purpose"] = purpose
+            save_config(config)
+            self.purpose = purpose
+            window.destroy()
+            self.show_fullscreen_input_window()
 
     def show_fullscreen_input_window(self):
         fullscreen_window = tk.Toplevel(self.root)
@@ -102,20 +158,37 @@ class TaskManager:
         fullscreen_window.attributes("-topmost", True)
         fullscreen_window.configure(bg="#2b2b2b")
 
-        ttk.Label(fullscreen_window, text="Why did you turn on your computer?", font=("Arial", 24)).pack(pady=30)
-        
-        self.reason_input = ttk.Entry(fullscreen_window, font=("Arial", 20), width=60)
+        # Main content frame
+        main_frame = ttk.Frame(fullscreen_window)
+        main_frame.pack(expand=True, fill="both")
+
+        ttk.Label(main_frame, text="Why did you turn on your computer?", font=("Arial", 24)).pack(pady=30)
+
+        self.reason_input = ttk.Entry(main_frame, font=("Arial", 20), width=60)
         self.reason_input.pack(pady=10)
 
-        ttk.Label(fullscreen_window, text=f"How will this help with: {PURPOSE}?", font=("Arial", 18)).pack(pady=30)
-        
-        self.how_helps_input = ttk.Entry(fullscreen_window, font=("Arial", 16), width=60)
+        ttk.Label(main_frame, text=f"How will this help with: {self.purpose}?", font=("Arial", 18)).pack(pady=30)
+
+        self.how_helps_input = ttk.Entry(main_frame, font=("Arial", 16), width=60)
         self.how_helps_input.pack(pady=10)
-        
-        confirm_button = ttk.Button(fullscreen_window, text="Confirm", command=self.on_confirm)
+
+        confirm_button = ttk.Button(main_frame, text="Confirm", command=self.on_confirm)
         confirm_button.pack(pady=30)
 
+        # Add "Change Purpose" button at the bottom
+        change_purpose_frame = ttk.Frame(fullscreen_window)
+        change_purpose_frame.pack(side="bottom", pady=10)
+
+        change_purpose_button = ttk.Button(change_purpose_frame, text="Change Purpose",
+                                          command=lambda: self.on_change_purpose(fullscreen_window))
+        change_purpose_button.pack()
+
         self.fullscreen_window = fullscreen_window
+
+    def on_change_purpose(self, current_window):
+        """Open purpose setup window to change the purpose."""
+        current_window.destroy()
+        self.show_purpose_setup_window()
 
     def on_confirm(self):
         reason = self.reason_input.get().strip()

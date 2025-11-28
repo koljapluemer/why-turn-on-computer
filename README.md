@@ -11,9 +11,10 @@ A little tkinter app running on autostart asking me why I turned on my computer,
 
 ## Running it
 
-- `poetry run python main.py`
+- `uv run python main.py`
 - to be really effective, put the script in OS's autostart
-- create `purpose.txt` with an important goal (just plaintext)
+- on first run, you'll be prompted to set your purpose
+- you can change your purpose anytime using the "Change Purpose" button
 
 ## Configuration
 

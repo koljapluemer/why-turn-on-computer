@@ -8,14 +8,13 @@ import os
 
 def build_executable():
     """Build the executable using PyInstaller"""
-    
+
     # PyInstaller command
     cmd = [
-        "poetry", "run", "pyinstaller",
+        "uv", "run", "pyinstaller",
         "--onefile",                    # Create a single executable file
         "--windowed",                   # Hide console window (for GUI apps)
         "--name", "why-turn-on-computer", # Name of the executable
-        "--add-data", "purpose.txt:.",  # Include purpose.txt file
         "main.py"                       # Main script
     ]
     
